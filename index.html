@@ -1,24 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wosat666</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 50px;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-        h1 {
-            color: #0066cc;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Herzenstimme</title>
+<style>
+:root{--bg:#faf6f2;--card:#fff;--text:#2a2230;--muted:#7a6f82;--accent:#d6336c;--accent2:#f08c00;--line:#eadfe6}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#17121c;--card:#241c2c;--text:#f3ecf7;--muted:#a99bb3;--accent:#ff6b9d;--accent2:#ffa94d;--line:#3a2f45}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:480px;margin:0 auto;padding:32px 20px 48px;text-align:center}
+.avatar{width:96px;height:96px;border-radius:50%;margin:0 auto 14px;display:grid;place-items:center;font-size:40px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+h1{font-size:22px;margin:0}
+.handle{color:var(--muted);margin:4px 0 8px}
+.bio{color:var(--muted);margin:0 0 24px;line-height:1.45}
+.link{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin:0 0 12px;color:var(--text);text-decoration:none;font-weight:600;transition:transform .15s,border-color .15s}
+.link:hover{transform:translateY(-2px);border-color:var(--accent)}
+</style>
 </head>
 <body>
-    <h1>Hallo Welt! 🚀</h1>
-    <p>Meine Website läuft jetzt kostenlos über GitHub Pages mit SSL.</p>
+<main>
+  <div class="avatar">H</div>
+  <h1>Herzenstimme</h1>
+  <div class="handle">@deinhandle</div>
+  <p class="bio">Hier findest du alle meine Links an einem Ort.</p>
+
+  <!-- Links ändern: einfach Zeilen kopieren, Adresse und Titel anpassen -->
+  <a class="link" href="https://instagram.com/" target="_blank" rel="noopener noreferrer">Mein Instagram</a>
+  <a class="link" href="https://example.com/" target="_blank" rel="noopener noreferrer">Mein Shop</a>
+  <a class="link" href="mailto:hallo@herzenstimme.com">Kontakt per E-Mail</a>
+</main>
 </body>
 </html>
