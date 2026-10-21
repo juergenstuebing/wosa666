@@ -1,14 +1,12 @@
 <!doctype html>
-<html lang="de" data-theme="light" style="color-scheme: light;"><head>
+<html lang="de">
+<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Meine Links</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erika Stübing · Herzenstimme</title>
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
---bg:#faf6f2;--card:#fff;--text:#2a2230;--muted:#7a6f82;--accent:#d6336c;--accent2:#f08c00;--line:#eadfe6}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#17121c;--card:#241c2c;--text:#f3ecf7;--muted:#a99bb3;--accent:#ff6b9d;--accent2:#ffa94d;--line:#3a2f45}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#17121c;--card:#241c2c;--text:#f3ecf7;--muted:#a99bb3;--accent:#ff6b9d;--accent2:#ffa94d;--line:#3a2f45}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{--bg:#faf6f2;--card:#fff;--text:#2a2230;--muted:#7a6f82;--accent:#d6336c;--accent2:#f08c00;--line:#eadfe6}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#17121c;--card:#241c2c;--text:#f3ecf7;--muted:#a99bb3;--accent:#ff6b9d;--accent2:#ffa94d;--line:#3a2f45}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
 main{max-width:480px;margin:0 auto;padding:32px 20px 48px;text-align:center}
@@ -18,119 +16,18 @@ h1{font-size:22px;margin:0}
 .bio{color:var(--muted);margin:0 0 24px;line-height:1.45}
 .link{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin:0 0 12px;color:var(--text);text-decoration:none;font-weight:600;transition:transform .15s,border-color .15s}
 .link:hover{transform:translateY(-2px);border-color:var(--accent)}
-.row{display:flex;gap:8px;align-items:stretch;margin-bottom:12px}
-.row .link{flex:1;margin:0}
-button,input{font:inherit}
-button{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:8px 12px}
-button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
-input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);margin-bottom:8px}
-.edit{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:14px;margin-top:20px;text-align:left}
-.edit h2{font-size:14px;margin:0 0 10px;color:var(--muted)}
-.bar{display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap}
-.hint{color:var(--muted);font-size:13px;margin-top:10px}
-.empty{color:var(--muted);padding:20px 0}
 </style>
 </head>
 <body>
-<main id="app"></main>
-<script id="data" type="application/json">{"name":"Erika Stübing","handle":"@herzenstimme","bio":"Hier findest du alle meine Links an einem Ort.","links":[{"t":"Mein Instagram","u":"https://instagram.com/"},{"t":"Ikea Eket","u":"https://ikea.com/ekeet"}]}</script>
-<script>
-(function(){
-  var state = JSON.parse(document.getElementById('data').textContent);
-  var isOwner = false, editing = false, artifact = null, saving = false;
-  var app = document.getElementById('app');
+<main>
+  <div class="avatar">E</div>
+  <h1>Erika Stübing</h1>
+  <div class="handle">@herzenstimme</div>
+  <p class="bio">Hier findest du alle meine Links an einem Ort.</p>
 
-  function el(tag, props, kids){
-    var n = document.createElement(tag);
-    for (var k in (props||{})) {
-      if (k === 'text') n.textContent = props[k];
-      else if (k.indexOf('on') === 0) n.addEventListener(k.slice(2), props[k]);
-      else n.setAttribute(k, props[k]);
-    }
-    (kids||[]).forEach(function(c){ if (c) n.appendChild(c); });
-    return n;
-  }
-  function safeUrl(u){
-    u = (u||'').trim();
-    if (!u) return '';
-    if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u;
-    return /^https?:\/\//i.test(u) || /^mailto:/i.test(u) ? u : '';
-  }
-
-  function render(){
-    app.textContent = '';
-    var initial = (state.name || '?').trim().charAt(0).toUpperCase();
-    app.appendChild(el('div', {'class':'avatar', text: initial}));
-    app.appendChild(el('h1', {text: state.name}));
-    app.appendChild(el('div', {'class':'handle', text: state.handle}));
-    app.appendChild(el('p', {'class':'bio', text: state.bio}));
-
-    if (!state.links.length) app.appendChild(el('div', {'class':'empty', text:'Noch keine Links vorhanden.'}));
-    state.links.forEach(function(l, i){
-      var a = el('a', {'class':'link', href: safeUrl(l.u) || '#', target:'_blank', rel:'noopener noreferrer', text: l.t});
-      if (editing) {
-        var row = el('div', {'class':'row'}, [a,
-          el('button', {text:'↑', title:'Nach oben', onclick:function(){ if(i>0){ var x=state.links.splice(i,1)[0]; state.links.splice(i-1,0,x); render(); } }}),
-          el('button', {text:'✕', title:'Löschen', onclick:function(){ state.links.splice(i,1); render(); }})
-        ]);
-        app.appendChild(row);
-      } else app.appendChild(a);
-    });
-
-    if (isOwner) {
-      if (!editing) {
-        app.appendChild(el('div', {'class':'bar'}, [el('button', {text:'✏️ Bearbeiten', onclick:function(){ editing = true; render(); }})]));
-      } else {
-        var n = el('input', {placeholder:'Name', value: state.name});
-        var h = el('input', {placeholder:'@handle', value: state.handle});
-        var b = el('input', {placeholder:'Kurzbeschreibung', value: state.bio});
-        var t = el('input', {placeholder:'Link-Titel, z. B. Mein Shop'});
-        var u = el('input', {placeholder:'URL, z. B. https://…'});
-        var box = el('div', {'class':'edit'}, [
-          el('h2', {text:'Profil'}), n, h, b,
-          el('h2', {text:'Neuen Link hinzufügen'}), t, u,
-          el('button', {text:'+ Link hinzufügen', onclick:function(){
-            var url = safeUrl(u.value);
-            if (!t.value.trim() || !url) { alert('Bitte Titel und gültige URL eingeben.'); return; }
-            state.name = n.value; state.handle = h.value; state.bio = b.value;
-            state.links.push({t:t.value.trim(), u:url}); render();
-          }})
-        ]);
-        app.appendChild(box);
-        var save = el('button', {'class':'primary', text:'Speichern & veröffentlichen', onclick:function(){
-          state.name = n.value; state.handle = h.value; state.bio = b.value; publish();
-        }});
-        var cancel = el('button', {text:'Abbrechen', onclick:function(){ location.reload(); }});
-        app.appendChild(el('div', {'class':'bar'}, [save, cancel]));
-        app.appendChild(el('div', {'class':'hint', text:'Nach dem Speichern ist die Seite für alle mit dem Link aktuell.'}));
-      }
-    }
-  }
-
-  async function publish(){
-    if (!artifact || saving) return;
-    saving = true;
-    try {
-      var doc = document.documentElement.cloneNode(true);
-      doc.querySelector('#app').textContent = '';
-      doc.querySelector('#data').textContent = JSON.stringify(state).replace(/</g, '\\u003c');
-      await artifact.publish('<!doctype html>\n' + doc.outerHTML);
-    } catch(e) { alert('Speichern fehlgeschlagen. Bitte erneut versuchen.'); }
-    saving = false;
-  }
-
-  render();
-  (async function(){
-    try {
-      var user = await claude.use('user');
-      isOwner = !!(user && (user.isOwner() || user.canEdit()));
-      artifact = await claude.use('artifact');
-      if (!artifact) isOwner = false;
-      render();
-    } catch(e) {}
-  })();
-})();
-</script>
-
-
-</body></html>
+  <!-- Links ändern: einfach Zeilen kopieren, Adresse und Titel anpassen -->
+  <a class="link" href="https://instagram.com/herzenstimme" target="_blank" rel="noopener noreferrer">Mein Instagram</a>
+  <a class="link" href="https://www.ikea.com/de/de/search/?q=EKET" target="_blank" rel="noopener noreferrer">Ikea Eket</a>
+</main>
+</body>
+</html>
