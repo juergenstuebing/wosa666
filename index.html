@@ -16,6 +16,17 @@ h1{font-size:22px;margin:0}
 .bio{color:var(--muted);margin:0 0 24px;line-height:1.45}
 .link{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin:0 0 12px;color:var(--text);text-decoration:none;font-weight:600;transition:transform .15s,border-color .15s}
 .link:hover{transform:translateY(-2px);border-color:var(--accent)}
+.row{display:flex;gap:8px;margin-bottom:12px}.row .link{flex:1;margin:0}
+button,input{font:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:8px 12px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);margin-bottom:8px}
+.edit{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:14px;margin-top:20px;text-align:left}
+.edit h2{font-size:14px;margin:0 0 10px;color:var(--muted)}
+.bar{margin-top:28px}
+.msg{color:var(--muted);font-size:13px;margin-top:10px}
+.err{color:#d6336c}
+.login{font-size:12px;color:var(--muted);background:none;border:none;text-decoration:underline;padding:4px}
 </style>
 </head>
 <body>
@@ -24,10 +35,116 @@ h1{font-size:22px;margin:0}
   <h1>Erika Stübing</h1>
   <div class="handle">@herzenstimme</div>
   <p class="bio">Hier findest du alle meine Links an einem Ort.</p>
-
-  <!-- Links ändern: einfach Zeilen kopieren, Adresse und Titel anpassen -->
-  <a class="link" href="https://instagram.com/herzenstimme" target="_blank" rel="noopener noreferrer">Mein Instagram</a>
-  <a class="link" href="https://www.ikea.com/de/de/search/?q=EKET" target="_blank" rel="noopener noreferrer">Ikea Eket</a>
+  <div id="links"></div>
+  <div id="admin"></div>
+  <div id="msg" class="msg"></div>
 </main>
+<script>
+(function(){
+  var URL_ = 'https://saoxlwikpjhxxcetooyc.supabase.co';
+  var KEY = 'sb_publishable_M6Z-4XZ1ICxaCCd7sZGDOA_TYD3n-M8';
+  var token = null, email = null;
+  var linksEl = document.getElementById('links'),
+      adminEl = document.getElementById('admin'),
+      msgEl = document.getElementById('msg');
+
+  try { token = sessionStorage.getItem('hs_token'); email = sessionStorage.getItem('hs_email'); } catch (e) {}
+
+  function msg(t, isErr){ msgEl.textContent = t || ''; msgEl.className = 'msg' + (isErr ? ' err' : ''); }
+  function el(tag, props, kids){
+    var n = document.createElement(tag);
+    for (var k in (props||{})) {
+      if (k === 'text') n.textContent = props[k];
+      else if (k.indexOf('on') === 0) n.addEventListener(k.slice(2), props[k]);
+      else n.setAttribute(k, props[k]);
+    }
+    (kids||[]).forEach(function(c){ n.appendChild(c); });
+    return n;
+  }
+  function safeHref(u){ return /^(https?:|mailto:)/i.test(u) ? u : '#'; }
+  function normUrl(u){
+    u = (u||'').trim();
+    if (!u) return '';
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u;
+    return /^(https?:\/\/|mailto:)/i.test(u) ? u : '';
+  }
+  function logout(){ try { sessionStorage.clear(); } catch(e){} token = null; email = null; renderAdmin(); load(); }
+
+  async function rest(path, opts){
+    opts = opts || {};
+    var headers = Object.assign({'apikey': KEY, 'Content-Type': 'application/json'}, opts.headers || {});
+    if (token) headers.Authorization = 'Bearer ' + token;
+    var r = await fetch(URL_ + '/rest/v1/' + path, Object.assign({}, opts, {headers: headers}));
+    if (r.status === 401) { logout(); throw new Error('Sitzung abgelaufen. Bitte neu anmelden.'); }
+    if (r.status === 403) throw new Error('Keine Berechtigung für diese Aktion.');
+    if (!r.ok) throw new Error('Fehler beim Speichern.');
+    return r.status === 204 ? null : r.json().catch(function(){ return null; });
+  }
+
+  async function load(){
+    try {
+      var list = await rest('links?select=id,title,url&order=created_at.asc');
+      linksEl.textContent = '';
+      if (!list.length) linksEl.appendChild(el('div', {'class':'msg', text:'Noch keine Links vorhanden.'}));
+      list.forEach(function(l){
+        var a = el('a', {'class':'link', href: safeHref(l.url), target:'_blank', rel:'noopener noreferrer', text: l.title});
+        if (token) {
+          linksEl.appendChild(el('div', {'class':'row'}, [a, el('button', {text:'✕', title:'Löschen', onclick: async function(){
+            if (!confirm('Link „' + l.title + '“ löschen?')) return;
+            try { await rest('links?id=eq.' + encodeURIComponent(l.id), {method:'DELETE'}); load(); }
+            catch(e){ msg(e.message, true); }
+          }})]));
+        } else linksEl.appendChild(a);
+      });
+    } catch(e){ msg('Links konnten nicht geladen werden.', true); }
+  }
+
+  async function login(mail, pw){
+    var r = await fetch(URL_ + '/auth/v1/token?grant_type=password', {
+      method:'POST', headers:{'apikey': KEY, 'Content-Type':'application/json'},
+      body: JSON.stringify({email: mail.trim(), password: pw})
+    });
+    var d = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !d.access_token) throw new Error('E-Mail oder Passwort stimmt nicht.');
+    token = d.access_token; email = (d.user && d.user.email) || mail.trim();
+    try { sessionStorage.setItem('hs_token', token); sessionStorage.setItem('hs_email', email); } catch(e){}
+  }
+
+  function renderAdmin(){
+    adminEl.textContent = '';
+    if (!token) {
+      var m = el('input', {type:'email', placeholder:'E-Mail', autocomplete:'username'});
+      var p = el('input', {type:'password', placeholder:'Passwort', autocomplete:'current-password'});
+      var box = el('div', {'class':'edit', style:'display:none'}, [
+        el('h2', {text:'Anmelden'}), m, p,
+        el('button', {'class':'primary', text:'Anmelden', onclick: async function(){
+          try { await login(m.value, p.value); msg(''); renderAdmin(); load(); }
+          catch(e){ msg(e.message, true); }
+        }})
+      ]);
+      adminEl.appendChild(el('div', {'class':'bar'}, [el('button', {'class':'login', text:'Anmelden', onclick:function(){ box.style.display = box.style.display === 'none' ? 'block' : 'none'; }})]));
+      adminEl.appendChild(box);
+      return;
+    }
+    var t = el('input', {placeholder:'Link-Titel, z. B. Mein Shop', maxlength:'80'});
+    var u = el('input', {placeholder:'URL, z. B. https://…'});
+    adminEl.appendChild(el('div', {'class':'edit'}, [
+      el('h2', {text:'Eingeloggt als ' + email + ' – neuen Link hinzufügen'}), t, u,
+      el('button', {'class':'primary', text:'+ Link hinzufügen', onclick: async function(){
+        var url = normUrl(u.value), title = t.value.trim();
+        if (!title || !url) { msg('Bitte Titel und gültige URL eingeben.', true); return; }
+        try {
+          await rest('links', {method:'POST', headers:{'Prefer':'return=minimal'}, body: JSON.stringify({title:title, url:url})});
+          t.value = ''; u.value = ''; msg('Link hinzugefügt.'); load();
+        } catch(e){ msg(e.message, true); }
+      }}),
+      el('button', {text:'Abmelden', style:'margin-left:8px', onclick: logout})
+    ]));
+  }
+
+  renderAdmin();
+  load();
+})();
+</script>
 </body>
 </html>
